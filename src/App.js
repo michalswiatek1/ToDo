@@ -1,56 +1,67 @@
 import './App.css';
 import Add from './components/Add/Add';
 import Header from './components/Header/Header';
-import styles from '../src/components/Add/Add.module.css';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Form from './components/Form/Form';
+import TodoList from './components/ToDoList/ToDoList';
+import Time from './components/Time/Time';
 
 function App() {
-  const [newItem, setNewItem] = useState('');
-  const [items, setItems] = useState([]);
+  const [inputText, setInputText] = useState('');
+  const [todos, setTodos] = useState([]);
+  const [status, setStatus] = useState('all');
+  const [filteredTodos, setFilteredTodos] = useState([]);
 
-  function addItem() {
-    if (!newItem) {
-      alert('Uzupełnij zadanie!');
+  const filterHandler = () => {
+    switch (status) {
+      case 'completed':
+        setFilteredTodos(todos.filter((todo) => todo.completed === true));
+        break;
+      case 'uncompleted':
+        setFilteredTodos(todos.filter((todo) => todo.completed === false));
+        break;
+      default:
+        setFilteredTodos(todos);
+        break;
     }
+  };
+  useEffect(() => {
+    getLocalTodos();
+  }, []);
+  useEffect(() => {
+    filterHandler();
+    saveLocalTodos();
+  }, [todos, status]);
 
-    const item = {
-      id: Math.floor(Math.random() * 1000),
-      value: newItem,
-    };
-
-    setItems((oldList) => [...oldList, item]);
-  }
-  function deleteItem(id) {
-    const newArray = items.filter((item) => item.id !== id);
-    setItems(newArray);
-  }
+  const saveLocalTodos = () => {
+    localStorage.setItem('todos', JSON.stringify(todos));
+  };
+  const getLocalTodos = () => {
+    if (localStorage.getItem('todos') === null) {
+      localStorage.setItem('todos', JSON.stringify([]));
+    } else {
+      let todoLocal = JSON.parse(localStorage.getItem('todos'));
+      setTodos(todoLocal);
+    }
+  };
 
   return (
     <div className="App">
       <Header />
+      <Time />
       <Add />
-
-      <input
-        type="text"
-        className={styles.input}
-        placeholder="Wpisz treść zadania..."
-        value={newItem}
-        onChange={(e) => setNewItem(e.target.value)}
+      <Form
+        inputText={inputText}
+        todos={todos}
+        setTodos={setTodos}
+        setInputText={setInputText}
+        setStatus={setStatus}
       />
-      <button className="btn btn-outline-success" onClick={() => addItem()}>
-        ADD
-      </button>
-
-      <ul>
-        {items.map((item) => {
-          return (
-            <li key={item.id}>
-              {item.value}{' '}
-              <button onClick={() => deleteItem(item.id)}>Delete</button>{' '}
-            </li>
-          );
-        })}
-      </ul>
+      <TodoList
+        filteredTodos={filteredTodos}
+        setTodos={setTodos}
+        todos={todos}
+      />
     </div>
   );
 }
